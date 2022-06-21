@@ -517,15 +517,18 @@ class MessageGenerator extends ProtobufContainer {
     _emitDeprecatedIf(field.isDeprecated, out);
     _emitOverrideIf(field.overridesGetter, out);
     _emitIndexAnnotation(field.number, out);
+
     final getterExpr = _getterExpression(fieldTypeString, field.index!,
         defaultExpr, field.isRepeated, field.isMapField);
     out.printlnAnnotated(
-        '$fieldTypeString get ${names!.fieldName} => $getterExpr;', [
-      NamedLocation(
-          name: names.fieldName,
-          fieldPathSegment: memberFieldPath,
-          start: '$fieldTypeString get '.length)
-    ]);
+        '$fieldTypeString${field.isRequired ? '' : '?'} get ${names!.fieldName} => $getterExpr;',
+        [
+          NamedLocation(
+              name: names.fieldName,
+              fieldPathSegment: memberFieldPath,
+              start:
+                  '$fieldTypeString${field.isRequired ? '' : '?'} get '.length)
+        ]);
 
     if (field.isRepeated) {
       if (field.overridesSetter) {
