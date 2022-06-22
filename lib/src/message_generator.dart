@@ -519,13 +519,25 @@ class MessageGenerator extends ProtobufContainer {
     _emitIndexAnnotation(field.number, out);
     final getterExpr = _getterExpression(fieldTypeString, field.index!,
         defaultExpr, field.isRepeated, field.isMapField);
-    out.printlnAnnotated(
-        '$fieldTypeString get ${names!.fieldName} => $getterExpr;', [
-      NamedLocation(
-          name: names.fieldName,
-          fieldPathSegment: memberFieldPath,
-          start: '$fieldTypeString get '.length)
-    ]);
+
+    if (field.isOptional) {
+      out.printlnAnnotated(
+          '$fieldTypeString? get ${names!.fieldName} =>  \$_has(${field.index}) ? $getterExpr : null;',
+          [
+            NamedLocation(
+                name: '${names.fieldName}?',
+                fieldPathSegment: memberFieldPath,
+                start: '$fieldTypeString get '.length)
+          ]);
+    } else {
+      out.printlnAnnotated(
+          '$fieldTypeString get ${names!.fieldName} => $getterExpr;', [
+        NamedLocation(
+            name: names.fieldName,
+            fieldPathSegment: memberFieldPath,
+            start: '$fieldTypeString get '.length)
+      ]);
+    }
 
     if (field.isRepeated) {
       if (field.overridesSetter) {
@@ -545,31 +557,61 @@ class MessageGenerator extends ProtobufContainer {
       _emitDeprecatedIf(field.isDeprecated, out);
       _emitOverrideIf(field.overridesSetter, out);
       _emitIndexAnnotation(field.number, out);
-      if (fastSetter != null) {
-        out.printlnAnnotated(
-            'set ${names.fieldName}'
-            '($fieldTypeString v) { '
-            '$fastSetter(${field.index}, v);'
-            ' }',
-            [
-              NamedLocation(
-                  name: names.fieldName,
-                  fieldPathSegment: memberFieldPath,
-                  start: 'set '.length)
-            ]);
+
+      if (field.isOptional) {
+        if (fastSetter != null) {
+          out.printlnAnnotated(
+              'set ${names.fieldName}'
+              '($fieldTypeString? v) { '
+              'if(v != null) $fastSetter(${field.index}, v);'
+              ' }',
+              [
+                NamedLocation(
+                    name: names.fieldName,
+                    fieldPathSegment: memberFieldPath,
+                    start: 'set '.length)
+              ]);
+        } else {
+          out.printlnAnnotated(
+              'set ${names.fieldName}'
+              '($fieldTypeString? v) { '
+              'if(v != null) setField(${field.number}, v);'
+              ' }',
+              [
+                NamedLocation(
+                    name: names.fieldName,
+                    fieldPathSegment: memberFieldPath,
+                    start: 'set '.length)
+              ]);
+        }
       } else {
-        out.printlnAnnotated(
-            'set ${names.fieldName}'
-            '($fieldTypeString v) { '
-            'setField(${field.number}, v);'
-            ' }',
-            [
-              NamedLocation(
-                  name: names.fieldName,
-                  fieldPathSegment: memberFieldPath,
-                  start: 'set '.length)
-            ]);
+        if (fastSetter != null) {
+          out.printlnAnnotated(
+              'set ${names.fieldName}'
+              '($fieldTypeString v) { '
+              '$fastSetter(${field.index}, v);'
+              ' }',
+              [
+                NamedLocation(
+                    name: names.fieldName,
+                    fieldPathSegment: memberFieldPath,
+                    start: 'set '.length)
+              ]);
+        } else {
+          out.printlnAnnotated(
+              'set ${names.fieldName}'
+              '($fieldTypeString v) { '
+              'setField(${field.number}, v);'
+              ' }',
+              [
+                NamedLocation(
+                    name: names.fieldName,
+                    fieldPathSegment: memberFieldPath,
+                    start: 'set '.length)
+              ]);
+        }
       }
+
       if (field.hasPresence) {
         _emitDeprecatedIf(field.isDeprecated, out);
         _emitOverrideIf(field.overridesHasMethod, out);

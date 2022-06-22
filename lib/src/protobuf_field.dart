@@ -62,6 +62,8 @@ class ProtobufField {
   bool get isRepeated =>
       descriptor.label == FieldDescriptorProto_Label.LABEL_REPEATED;
 
+  bool get isOptional => descriptor.proto3Optional;
+
   /// Whether a numeric field is repeated and must be encoded with packed
   /// encoding.
   ///
